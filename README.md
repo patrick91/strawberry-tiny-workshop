@@ -7,7 +7,7 @@ This is a workshop for learning the basics of GraphQL and Strawberry.
 To get started, you need to install the dependencies:
 
 ```bash
-python -m env venv
+python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```

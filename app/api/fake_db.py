@@ -1,4 +1,4 @@
-from typing import Dict, Optional, TypedDict
+from typing import Dict, Optional, TypedDict, List
 
 
 class Answer(TypedDict):
@@ -10,7 +10,7 @@ class Answer(TypedDict):
 class Poll(TypedDict):
     id: int
     title: str
-    answers: list[Answer]
+    answers: List[Answer]
     total_votes: int
 
 

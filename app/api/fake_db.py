@@ -31,3 +31,19 @@ POLLS: Dict[str, Poll] = {
 class Db:
     def get_poll(self, id: str) -> Optional[Poll]:
         return POLLS.get(id)
+
+    def update_poll(self, poll_id: str, answer_id: str) -> Optional[Poll]:
+        poll = POLLS.get(poll_id)
+
+        if poll is None:
+            return None
+
+        for answer in poll["answers"]:
+            if answer["id"] == int(answer_id):
+                answer["votes"] += 1
+                poll["total_votes"] += 1
+                break
+        else:
+            return None
+
+        return poll

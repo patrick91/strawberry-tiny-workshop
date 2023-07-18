@@ -2,9 +2,16 @@ from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
 from app.api.schema import schema
+from app.api.fake_db import Db
 
 
-graphql_app = GraphQLRouter[None, None](schema)
+def context_getter():
+    db = Db()
+
+    return {"db": db}
+
+
+graphql_app = GraphQLRouter[None, None](schema, context_getter=context_getter)
 
 
 app = FastAPI()

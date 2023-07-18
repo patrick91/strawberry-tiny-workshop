@@ -57,4 +57,27 @@ class Query:
         return Poll.from_dict(poll)
 
 
-schema = strawberry.Schema(query=Query)
+# query {
+#   vote(pollId:"1", answerId: "2") {
+#     id
+#   }
+# }
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def vote(
+        self, info: Info, pollId: strawberry.ID, answerId: strawberry.ID
+    ) -> Optional[Poll]:
+        db = info.context["db"]
+
+        poll = db.update_poll(pollId, answerId)
+
+        if poll is None:
+            return None
+
+        return Poll.from_dict(poll)
+
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)

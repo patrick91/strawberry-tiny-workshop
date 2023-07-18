@@ -8,7 +8,7 @@ from app.api.fake_db import Db
 def context_getter():
     db = Db()
 
-    return {"db": db}
+    return {"db": db, "user": None}
 
 
 graphql_app = GraphQLRouter[None, None](schema, context_getter=context_getter)

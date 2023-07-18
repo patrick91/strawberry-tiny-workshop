@@ -2,7 +2,11 @@ import strawberry
 
 from typing import List, Optional
 
+from typing_extensions import Annotated
+
+
 from strawberry.types import Info
+from strawberry.arguments import UNSET
 
 
 @strawberry.type
@@ -12,15 +16,23 @@ class Answer:
     votes: int
 
 
-@strawberry.type
-class Poll:
+@strawberry.type(name="Poll")
+class PollType:
     id: strawberry.ID
     question: str
-    answers: List[Answer]
     total_votes: int
+    answers: List[Answer]
+    old_votes: Optional[int] = strawberry.field(
+        deprecation_reason="use total_votes", default=1
+    )
+
+    @strawberry.field
+    def old_votes2(self) -> int:
+        breakpoint()
+        return self.total_votes
 
     @classmethod
-    def from_dict(cls, poll) -> "Poll":  # type: ignore
+    def from_dict(cls, poll) -> "PollType":  # type: ignore
         return cls(
             question=poll["title"],
             id=strawberry.ID(str(poll["id"])),
@@ -44,9 +56,22 @@ class Poll:
 
 
 @strawberry.type
+class PageInfo:
+    has_next_page: bool
+    has_previous_page: bool
+    count: int
+
+
+@strawberry.type
+class PollsPage:
+    items: List[PollType]
+    page_info: PageInfo
+
+
+@strawberry.type
 class Query:
     @strawberry.field
-    def poll(self, id: strawberry.ID, info: Info) -> Optional[Poll]:
+    async def poll(self, id: strawberry.ID, info: Info) -> Optional[PollType]:
         db = info.context["db"]
 
         poll = db.get_poll(id)
@@ -54,7 +79,26 @@ class Query:
         if poll is None:
             return None
 
-        return Poll.from_dict(poll)
+        return PollType.from_dict(poll)
+
+    @strawberry.field
+    def polls(self, info: Info, page: int, per_page: int) -> PollsPage:
+        assert page > 0
+        assert per_page > 0
+        assert per_page <= 50
+
+        db = info.context["db"]
+
+        polls = db.list_polls(page=1)
+
+        return PollsPage(
+            items=[PollType.from_dict(poll) for poll in polls],
+            page_info=PageInfo(
+                has_next_page=False,
+                has_previous_page=False,
+                count=len(polls),
+            ),
+        )
 
 
 # query {
@@ -68,8 +112,18 @@ class Query:
 class Mutation:
     @strawberry.mutation
     def vote(
-        self, info: Info, pollId: strawberry.ID, answerId: strawberry.ID
-    ) -> Optional[Poll]:
+        self,
+        info: Info,
+        pollId: strawberry.ID,
+        answerId: strawberry.ID,
+        def_: Annotated[
+            int,
+            strawberry.argument(
+                name="def",
+                description="this is a def",
+            ),
+        ] = UNSET,
+    ) -> Optional[PollType]:
         db = info.context["db"]
 
         poll = db.update_poll(pollId, answerId)
@@ -77,7 +131,13 @@ class Mutation:
         if poll is None:
             return None
 
-        return Poll.from_dict(poll)
+        return PollType.from_dict(poll)
+
+    @strawberry.mutation
+    def delete_poll(self, info: Info, id: strawberry.ID) -> None:
+        db = info.context["db"]
+
+        db.delete_poll(id)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

@@ -47,3 +47,9 @@ class Db:
             return None
 
         return poll
+
+    def delete_poll(self, id: str) -> Optional[Poll]:
+        return POLLS.pop(id, None)
+
+    def list_polls(self) -> List[Poll]:
+        return list(POLLS.values())
